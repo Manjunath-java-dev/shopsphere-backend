@@ -59,7 +59,7 @@ public class UserService {
         if(!passwordEncoder.matches(loginRequest.getPassword(),user.getPassword())){
             throw new InvalidCredentialsException("Invalid email or password");
         }
-       String token = jwtService.generateToken(user.getEmail());
+       String token = jwtService.generateToken(user);
 
         return LoginResponse.builder()
                 .id(user.getId())
