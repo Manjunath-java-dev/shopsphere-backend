@@ -25,5 +25,10 @@ public class GlobalExceptionHandler {
         return  new ResponseEntity<>(ex.getMessage(),HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<String> handleCategoryNotFound(CategoryNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
+    }
+
 
 }
