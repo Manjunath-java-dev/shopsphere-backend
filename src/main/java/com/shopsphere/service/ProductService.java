@@ -8,6 +8,8 @@ import com.shopsphere.exception.CategoryNotFoundException;
 import com.shopsphere.exception.ProductNotFoundException;
 import com.shopsphere.repositoy.CategoryRepository;
 import com.shopsphere.repositoy.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -55,28 +57,28 @@ public class ProductService {
 
     }
 
-
-    public List<ProductResponse> getAllProducts(){
-      List<Product> productList =  productRepository.findAll();
-
-      return productList.stream()
-              .map(product -> {
-                  ProductResponse response= new ProductResponse();
-                  response.setId(product.getId());
-                  response.setName(product.getName());
-                  response.setDescription(product.getDescription());
-                  response.setPrice(product.getPrice());
-                  response.setStock(product.getStock());
-                  response.setBrand(product.getBrand());
-                  response.setColor(product.getColor());
-                  response.setVariant(product.getVariant());
-                  response.setRating(product.getRating());
-                  response.setCategoryName(product.getCategory().getName());
-
-                  return response;
-              })
-              .toList();
-    }
+//
+//    public List<ProductResponse> getAllProducts(){
+//      List<Product> productList =  productRepository.findAll();
+//
+//      return productList.stream()
+//              .map(product -> {
+//                  ProductResponse response= new ProductResponse();
+//                  response.setId(product.getId());
+//                  response.setName(product.getName());
+//                  response.setDescription(product.getDescription());
+//                  response.setPrice(product.getPrice());
+//                  response.setStock(product.getStock());
+//                  response.setBrand(product.getBrand());
+//                  response.setColor(product.getColor());
+//                  response.setVariant(product.getVariant());
+//                  response.setRating(product.getRating());
+//                  response.setCategoryName(product.getCategory().getName());
+//
+//                  return response;
+//              })
+//              .toList();
+//    }
 
     public ProductResponse getProductById(Long id){
        Product product = productRepository.findById(id)
@@ -135,5 +137,70 @@ public class ProductService {
               .orElseThrow(()->new ProductNotFoundException("product not found"));
       productRepository.delete(product);
       return "Product deleted successfully";
+    }
+
+    public List<ProductResponse> searchProducts(String name){
+       List<Product> productsList = productRepository.findByNameContainingIgnoreCase(name);
+      return productsList.stream()
+              .map(product -> {
+                  ProductResponse response= new ProductResponse();
+                  response.setId(product.getId());
+                  response.setName(product.getName());
+                  response.setDescription(product.getDescription());
+                  response.setPrice(product.getPrice());
+                  response.setStock(product.getStock());
+                  response.setBrand(product.getBrand());
+                  response.setColor(product.getColor());
+                  response.setVariant(product.getVariant());
+                  response.setRating(product.getRating());
+                  response.setCategoryName(product.getCategory().getName());
+
+                  return response;
+              })
+              .toList();
+    }
+
+    public List<ProductResponse> getProductsByCategory(Long categoryId){
+        categoryRepository.findById(categoryId)
+                .orElseThrow(() ->
+                        new CategoryNotFoundException("Category not found"));
+       List<Product> productsList = productRepository.findByCategoryId(categoryId);
+        return productsList.stream()
+                .map(product -> {
+                    ProductResponse response= new ProductResponse();
+                    response.setId(product.getId());
+                    response.setName(product.getName());
+                    response.setDescription(product.getDescription());
+                    response.setPrice(product.getPrice());
+                    response.setStock(product.getStock());
+                    response.setBrand(product.getBrand());
+                    response.setColor(product.getColor());
+                    response.setVariant(product.getVariant());
+                    response.setRating(product.getRating());
+                    response.setCategoryName(product.getCategory().getName());
+
+                    return response;
+                })
+                .toList();
+
+    }
+
+    public Page<ProductResponse> getAllProducts(Pageable pageable){
+      Page<Product> products =  productRepository.findAll(pageable);
+      return products.map(product->{
+          ProductResponse response= new ProductResponse();
+          response.setId(product.getId());
+          response.setName(product.getName());
+          response.setDescription(product.getDescription());
+          response.setPrice(product.getPrice());
+          response.setStock(product.getStock());
+          response.setBrand(product.getBrand());
+          response.setColor(product.getColor());
+          response.setVariant(product.getVariant());
+          response.setRating(product.getRating());
+          response.setCategoryName(product.getCategory().getName());
+
+          return response;
+      });
     }
 }
