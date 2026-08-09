@@ -8,6 +8,8 @@ import com.shopsphere.exception.CategoryNotFoundException;
 import com.shopsphere.exception.ProductNotFoundException;
 import com.shopsphere.repositoy.CategoryRepository;
 import com.shopsphere.repositoy.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.util.List;
 
 @Service
 public class ProductService {
+    Logger log = LoggerFactory.getLogger(ProductService.class);
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
@@ -25,6 +28,7 @@ public class ProductService {
     }
 
     public ProductResponse addProduct(ProductRequest productRequest){
+        log.info("Adding new product: {}", productRequest.getName());
       Category category = categoryRepository.findById(productRequest.getCategoryId())
                 .orElseThrow(()->new CategoryNotFoundException("Category not found"));
 
@@ -39,6 +43,7 @@ public class ProductService {
         product.setCategory(category);
 
         Product  savedProduct =  productRepository.save(product);
+        log.info("Product created successfully with id: {}", savedProduct.getId());
 
         ProductResponse productResponse = new ProductResponse();
 
@@ -81,8 +86,11 @@ public class ProductService {
 //    }
 
     public ProductResponse getProductById(Long id){
+//        log.info("Fetching product with id: {}",id);
+        log.debug("Looking for product with id: {}", id);
        Product product = productRepository.findById(id)
                .orElseThrow(()->new ProductNotFoundException("Product not found with id: "+id));
+        log.debug("Product found with id: {}", id);
        ProductResponse response = new ProductResponse();
         response.setId(product.getId());
         response.setName(product.getName());
@@ -133,13 +141,16 @@ public class ProductService {
     }
 
     public String deleteProduct(Long id){
+        log.info("Deleting product with id: {}", id);
       Product product =  productRepository.findById(id)
               .orElseThrow(()->new ProductNotFoundException("product not found"));
       productRepository.delete(product);
+        log.info("Product deleted successfully with id: {}", id);
       return "Product deleted successfully";
     }
 
     public List<ProductResponse> searchProducts(String name){
+        log.info("Searching product with name {} ",name);
        List<Product> productsList = productRepository.findByNameContainingIgnoreCase(name);
       return productsList.stream()
               .map(product -> {
