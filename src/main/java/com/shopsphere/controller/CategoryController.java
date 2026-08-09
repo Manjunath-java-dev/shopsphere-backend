@@ -4,11 +4,13 @@ import com.shopsphere.dto.request.CategoryRequest;
 import com.shopsphere.dto.response.ApiResponse;
 import com.shopsphere.dto.response.CategoryResponse;
 import com.shopsphere.service.CategoryService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 public class CategoryController {

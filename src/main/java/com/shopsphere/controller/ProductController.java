@@ -4,13 +4,15 @@ import com.shopsphere.dto.request.ProductRequest;
 import com.shopsphere.dto.response.ApiResponse;
 import com.shopsphere.dto.response.ProductResponse;
 import com.shopsphere.service.ProductService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/v1/admin/products")
 public class ProductController {
@@ -20,7 +22,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public ApiResponse<ProductResponse> addProduct(@RequestBody ProductRequest productRequest){
+    public ApiResponse<ProductResponse> addProduct(@Valid @RequestBody ProductRequest productRequest){
       ProductResponse productResponse =   productService.addProduct(productRequest);
       return ApiResponse.<ProductResponse>builder()
               .success(true)
@@ -53,7 +55,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<ProductResponse> updateProduct(@PathVariable Long id , @RequestBody ProductRequest productRequest){
+    public ApiResponse<ProductResponse> updateProduct(@Valid @PathVariable Long id , @RequestBody ProductRequest productRequest){
       ProductResponse productResponse =  productService.updateProduct(id,productRequest);
       return ApiResponse.<ProductResponse>
               builder()
@@ -95,13 +97,8 @@ public class ProductController {
     }
 
     @GetMapping
-    public ApiResponse<Page<ProductResponse>> getAllProducts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size){
-       Pageable pageable = PageRequest.of(page,size);
-
+    public ApiResponse<Page<ProductResponse>> getAllProducts(Pageable pageable){
      Page<ProductResponse> products =  productService.getAllProducts(pageable);
-
      return ApiResponse.<Page<ProductResponse>>builder()
              .success(true)
              .message("Products fetched successfully")
