@@ -87,5 +87,27 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(CartNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleCartNotFoundExceptio(CartNotFoundException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(CartItemNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleCartItemNotFoundException(
+            CartItemNotFoundException ex
+    ){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
+    }
+
 
 }
