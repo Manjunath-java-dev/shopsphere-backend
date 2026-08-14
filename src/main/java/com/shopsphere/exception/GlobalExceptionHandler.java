@@ -109,5 +109,36 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiResponse<Object>>
+    handleInsufficientStockException(InsufficientStockException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleOrderNotFoundException(OrderNotFoundException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
+    }
+
+    public ResponseEntity<ApiResponse<Object>>
+    handleInvalidOrderStatusException(InvalidOrderStatusException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.CONFLICT);
+    }
+
 
 }

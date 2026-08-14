@@ -9,6 +9,7 @@ import com.shopsphere.entity.User;
 import com.shopsphere.exception.UserNotFoundException;
 import com.shopsphere.repositoy.UserRepository;
 import com.shopsphere.service.CartService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/customer/cart")
+@SecurityRequirement(name = "bearerAuth")
 public class CustomerCartController {
     private final CartService cartService;
     private final UserRepository userRepository;
