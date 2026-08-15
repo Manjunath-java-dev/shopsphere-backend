@@ -210,4 +210,86 @@ public class OrderService {
 
         return orderResponse;
     }
+
+
+    public List<OrderResponse> getAllOrdersForAdmin(){
+      List<Order> orders =  orderRepository.findAll();
+      List<OrderResponse> orderResponses = new ArrayList<>();
+      for (Order order : orders){
+          OrderResponse orderResponse = convertToOrderResponse(order);
+          orderResponses.add(orderResponse);
+      }
+
+      return orderResponses;
+    }
+
+    private OrderResponse convertToOrderResponse(Order order) {
+        List<OrderItem> orderItems =
+                orderItemRepository.findByOrder(order);
+        List<OrderItemResponse> orderItemResponses =
+                new ArrayList<>();
+
+        for (OrderItem orderItem : orderItems){
+            OrderItemResponse orderItemResponse = new OrderItemResponse();
+            orderItemResponse.setProductId(orderItem.getProduct().getId());
+            orderItemResponse.setProductName(orderItem.getProduct().getName());
+            orderItemResponse.setPrice(orderItem.getPrice());
+            orderItemResponse.setQuantity(orderItem.getQuantity());
+
+            orderItemResponses.add(orderItemResponse);
+        }
+        OrderResponse orderResponse = new OrderResponse();
+
+        orderResponse.setId(order.getId());
+        orderResponse.setTotalAmount(order.getTotalAmount());
+        orderResponse.setStatus(order.getStatus());
+        orderResponse.setItems(orderItemResponses);
+
+        return orderResponse;
+    }
+    public OrderResponse getOrderByIdForAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() ->
+                        new OrderNotFoundException("Order not found"));
+
+        return convertToOrderResponse(order);
+
+    }
+
+    @Transactional
+    public OrderResponse updateOrderStatus(Long orderId, OrderStatus newStatus){
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(()->new  OrderNotFoundException("Order not found"));
+
+       OrderStatus currentStatus = order.getStatus();
+
+       if(currentStatus==OrderStatus.DELIVERED || currentStatus==OrderStatus.CANCELLED){
+           throw new InvalidOrderStatusException( "Order cannot be updated from status: "+currentStatus);
+       }
+        if (currentStatus == OrderStatus.PENDING &&
+                newStatus != OrderStatus.CONFIRMED) {
+
+            throw new InvalidOrderStatusException(
+                    "PENDING order can only be CONFIRMED");
+        }
+
+        if (currentStatus == OrderStatus.CONFIRMED &&
+                newStatus != OrderStatus.SHIPPED) {
+
+            throw new InvalidOrderStatusException(
+                    "CONFIRMED order can only be SHIPPED");
+        }
+
+        if (currentStatus == OrderStatus.SHIPPED &&
+                newStatus != OrderStatus.DELIVERED) {
+
+            throw new InvalidOrderStatusException(
+                    "SHIPPED order can only be DELIVERED");
+        }
+
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+        return convertToOrderResponse(order);
+    }
 }

@@ -130,6 +130,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(InvalidOrderStatusException.class)
     public ResponseEntity<ApiResponse<Object>>
     handleInvalidOrderStatusException(InvalidOrderStatusException ex){
         ApiResponse<Object> response = ApiResponse.builder()
