@@ -1,6 +1,7 @@
 package com.shopsphere.service;
 
 import com.shopsphere.dto.response.CartItemResponse;
+import com.shopsphere.dto.response.CartResponse;
 import com.shopsphere.entity.Cart;
 import com.shopsphere.entity.CartItem;
 import com.shopsphere.entity.Product;
@@ -71,16 +72,17 @@ public class CartService {
         return cartItemRepository.save(cartItem);
     }
 
-    public List<CartItemResponse> getMyCart(User user) {
+    public CartResponse getMyCart(User user) {
 
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Cart not found"));
+                        new CartNotFoundException("Cart not found"));
 
         List<CartItem> cartItems =
                 cartItemRepository.findByCart(cart);
 
         List<CartItemResponse> responses = new ArrayList<>();
+        Double totalAmount = 0.0;
 
         for (CartItem cartItem : cartItems) {
 
@@ -94,9 +96,17 @@ public class CartService {
                             .build();
 
             responses.add(response);
+            Double itemTotal =
+                    cartItem.getProduct().getPrice() * cartItem.getQuantity();
+            totalAmount = totalAmount + itemTotal;
         }
 
-        return responses;
+        CartResponse cartResponse = new CartResponse();
+
+        cartResponse.setItems(responses);
+        cartResponse.setTotalAmount(totalAmount);
+
+        return cartResponse;
     }
 
     public CartItem updateCartItem(User user, Long cartItemId, Integer quantity) {
@@ -130,7 +140,7 @@ public class CartService {
         // 1. Find user's cart
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Cart not found"));
+                        new CartNotFoundException("Cart not found"));
 
         // 2. Find cart item
         CartItem cartItem = cartItemRepository.findById(cartItemId)

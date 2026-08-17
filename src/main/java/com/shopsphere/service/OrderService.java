@@ -83,132 +83,76 @@ public class OrderService {
                     product.getStock() - cartItem.getQuantity());
             productRepository.save(product);
         }
+
         order.setTotalAmount(totalAmount);
         orderRepository.save(order);
 
-       List<OrderItem> orderItems =  orderItemRepository.findByOrder(order);
-
-       List<OrderItemResponse> orderItemResponses = new ArrayList<>();
-
-       for(OrderItem orderItem : orderItems){
-        Product product = orderItem.getProduct();
-           OrderItemResponse response = new OrderItemResponse();
-           response.setProductId(product.getId());
-           response.setProductName(product.getName());
-           response.setPrice(orderItem.getPrice());
-           response.setQuantity(orderItem.getQuantity());
-
-           orderItemResponses.add(response);
-       }
-
-
-        OrderResponse orderResponse = new OrderResponse();
-        orderResponse.setId(order.getId());
-        orderResponse.setTotalAmount(order.getTotalAmount());
-        orderResponse.setStatus(order.getStatus());
-        orderResponse.setItems(orderItemResponses);
-
-
-
-        // Clear cart after successful order
+// Clear cart
         cartItemRepository.deleteByCart(cart);
 
-       // Return order resposne
-        return orderResponse;
+// Convert Order → OrderResponse
+        return convertToOrderResponse(order);
     }
 
-    public List<OrderResponse> getAllOrders(User user){
+    public List<OrderResponse> getAllOrders(User user) {
+
         List<Order> orders = orderRepository.findByUser(user);
+
         List<OrderResponse> orderResponses = new ArrayList<>();
+
         for (Order order : orders) {
-            List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
 
-            List<OrderItemResponse> responses = new ArrayList<>();
-            for(OrderItem orderItem : orderItems){
-                OrderItemResponse orderItemResponse = new OrderItemResponse();
-                orderItemResponse.setProductId(orderItem.getProduct().getId());
-                orderItemResponse.setProductName(orderItem.getProduct().getName());
-                orderItemResponse.setPrice(orderItem.getPrice());
-                orderItemResponse.setQuantity(orderItem.getQuantity());
-                responses.add(orderItemResponse);
-            }
-
-            OrderResponse orderResponse = new OrderResponse();
-            orderResponse.setId(order.getId());
-            orderResponse.setTotalAmount(order.getTotalAmount());
-            orderResponse.setStatus(order.getStatus());
-            orderResponse.setItems(responses);
+            OrderResponse orderResponse =
+                    convertToOrderResponse(order);
 
             orderResponses.add(orderResponse);
         }
 
         return orderResponses;
-
     }
 
 
-    public OrderResponse getOrderById(Long orderId,User user){
-      Order order = orderRepository.findByIdAndUser(orderId,user).
-              orElseThrow(()-> new OrderNotFoundException("Order not found"));
+    public OrderResponse getOrderById(Long orderId, User user) {
 
-        List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
-        List<OrderItemResponse> orderItemResponses = new ArrayList<>();
-        for (OrderItem orderItem : orderItems){
-            OrderItemResponse orderItemResponse = new OrderItemResponse();
-            orderItemResponse.setProductId(orderItem.getProduct().getId());
-            orderItemResponse.setProductName(orderItem.getProduct().getName());
-            orderItemResponse.setPrice(orderItem.getPrice());
-            orderItemResponse.setQuantity(orderItem.getQuantity());
-            orderItemResponses.add(orderItemResponse);
-        }
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() ->
+                        new OrderNotFoundException("Order not found"));
 
-        OrderResponse orderResponse =  new OrderResponse();
-        orderResponse.setId(order.getId());
-        orderResponse.setTotalAmount(order.getTotalAmount());
-        orderResponse.setStatus(order.getStatus());
-        orderResponse.setItems(orderItemResponses);
-
-        return orderResponse;
-
+        return convertToOrderResponse(order);
     }
     @Transactional
-    public OrderResponse cancelOrder(Long orderId, User user){
-       Order order = orderRepository.findByIdAndUser(orderId,user).
-               orElseThrow(()->new OrderNotFoundException("Order not found"));
+    public OrderResponse cancelOrder(Long orderId, User user) {
 
-        if(order.getStatus()!=OrderStatus.PENDING &&
-                order.getStatus()!=OrderStatus.CONFIRMED){
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() ->
+                        new OrderNotFoundException("Order not found"));
+
+        if (order.getStatus() != OrderStatus.PENDING &&
+                order.getStatus() != OrderStatus.CONFIRMED) {
+
             throw new InvalidOrderStatusException(
-                    "Order cannot be cancelled in status: "+order.getStatus());
+                    "Order cannot be cancelled in status: "
+                            + order.getStatus());
         }
 
-           order.setStatus(OrderStatus.CANCELLED);
+        order.setStatus(OrderStatus.CANCELLED);
 
-       List<OrderItem> orderItems =  orderItemRepository.findByOrder(order);
+        List<OrderItem> orderItems =
+                orderItemRepository.findByOrder(order);
 
-       for(OrderItem orderItem : orderItems){
-          Product product = orderItem.getProduct();
-          product.setStock(product.getStock()+orderItem.getQuantity());
-           productRepository.save(product);
-       }
-       orderRepository.save(order);
-        List<OrderItemResponse> orderItemResponses = new ArrayList<>();
-        for (OrderItem orderItem : orderItems){
-            OrderItemResponse orderItemResponse = new OrderItemResponse();
-            orderItemResponse.setProductId(orderItem.getProduct().getId());
-            orderItemResponse.setProductName(orderItem.getProduct().getName());
-            orderItemResponse.setPrice(orderItem.getPrice());
-            orderItemResponse.setQuantity(orderItem.getQuantity());
-            orderItemResponses.add(orderItemResponse);
+        for (OrderItem orderItem : orderItems) {
+
+            Product product = orderItem.getProduct();
+
+            product.setStock(
+                    product.getStock() + orderItem.getQuantity());
+
+            productRepository.save(product);
         }
 
-        OrderResponse orderResponse =  new OrderResponse();
-        orderResponse.setId(order.getId());
-        orderResponse.setTotalAmount(order.getTotalAmount());
-        orderResponse.setStatus(order.getStatus());
-        orderResponse.setItems(orderItemResponses);
+        orderRepository.save(order);
 
-        return orderResponse;
+        return convertToOrderResponse(order);
     }
 
 

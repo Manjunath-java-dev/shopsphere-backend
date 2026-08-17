@@ -4,6 +4,7 @@ import com.shopsphere.dto.request.AddToCartRequest;
 import com.shopsphere.dto.request.UpdateCartItemRequest;
 import com.shopsphere.dto.response.ApiResponse;
 import com.shopsphere.dto.response.CartItemResponse;
+import com.shopsphere.dto.response.CartResponse;
 import com.shopsphere.entity.CartItem;
 import com.shopsphere.entity.User;
 import com.shopsphere.exception.UserNotFoundException;
@@ -53,16 +54,16 @@ public class CustomerCartController {
     }
 
     @GetMapping
-    public ApiResponse<List<CartItemResponse>> getMyCart( Authentication authentication){
+    public ApiResponse<CartResponse> getMyCart( Authentication authentication){
        String email = authentication.getName();
       User user = userRepository.findByEmail(email).orElseThrow(()->
                new UserNotFoundException("User not found"));
 
-     List<CartItemResponse> cartItems = cartService.getMyCart(user);
-     return ApiResponse.<List<CartItemResponse>>builder()
+     CartResponse cartResponse = cartService.getMyCart(user);
+     return ApiResponse.<CartResponse>builder()
              .success(true)
              .message("Cart fetched successfully")
-             .data(cartItems)
+             .data(cartResponse)
              .build();
 
     }
