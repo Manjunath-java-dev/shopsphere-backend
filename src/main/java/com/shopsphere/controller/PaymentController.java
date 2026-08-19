@@ -3,10 +3,9 @@ package com.shopsphere.controller;
 import com.shopsphere.dto.request.MakePaymentRequest;
 import com.shopsphere.dto.response.ApiResponse;
 import com.shopsphere.dto.response.PaymentResponse;
-import com.shopsphere.entity.Payment;
 import com.shopsphere.entity.User;
 import com.shopsphere.exception.UserNotFoundException;
-import com.shopsphere.repositoy.PaymentRepository;
+
 import com.shopsphere.repositoy.UserRepository;
 import com.shopsphere.service.PaymentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

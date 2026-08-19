@@ -9,6 +9,8 @@ import com.shopsphere.exception.InsufficientStockException;
 import com.shopsphere.exception.InvalidOrderStatusException;
 import com.shopsphere.exception.OrderNotFoundException;
 import com.shopsphere.repositoy.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import java.util.List;
 
 @Service
 public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final OrderItemRepository orderItemRepository;
@@ -37,6 +40,7 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(User user){
+        log.info("Order creation started for user: {}", user.getEmail());
         //find user's cart
       Cart cart =  cartRepository.findByUser(user)
                 .orElseThrow(()->new CartNotFoundException("Cart not found"));
@@ -46,6 +50,7 @@ public class OrderService {
 
        //check cart is empty
         if(cartItems.isEmpty()){
+            log.warn("Order creation failed: cart is empty for user: {}", user.getEmail());
             throw new CartNotFoundException("Cart is empty");
         }
 
@@ -53,6 +58,10 @@ public class OrderService {
         for (CartItem cartItem : cartItems){
           Product product = cartItem.getProduct();
           if(product.getStock()<cartItem.getQuantity()){
+              log.warn("Insufficient stock for product: {}, requested: {}, available: {}",
+                      product.getName(),
+                      cartItem.getQuantity(),
+                      product.getStock());
               throw new InsufficientStockException("Not enough stock for product: "+product.getName());
           }
         }
@@ -86,17 +95,28 @@ public class OrderService {
 
         order.setTotalAmount(totalAmount);
         orderRepository.save(order);
+        log.info("Order created with id: {} for user: {}",
+                order.getId(),
+                user.getEmail());
 
 // Clear cart
         cartItemRepository.deleteByCart(cart);
+
+        log.info("Order {} created successfully. Total amount: {}",
+                order.getId(),
+                order.getTotalAmount());
 
 // Convert Order → OrderResponse
         return convertToOrderResponse(order);
     }
 
     public List<OrderResponse> getAllOrders(User user) {
+        log.info("Fetching orders for user: {}", user.getEmail());
 
         List<Order> orders = orderRepository.findByUser(user);
+        log.info("Found {} orders for user: {}",
+                orders.size(),
+                user.getEmail());
 
         List<OrderResponse> orderResponses = new ArrayList<>();
 
@@ -113,15 +133,19 @@ public class OrderService {
 
 
     public OrderResponse getOrderById(Long orderId, User user) {
+        log.info("Fetching order {} for user: {}", orderId, user.getEmail());
 
         Order order = orderRepository.findByIdAndUser(orderId, user)
-                .orElseThrow(() ->
-                        new OrderNotFoundException("Order not found"));
+                .orElseThrow(() -> {
+                    log.warn("Order {} not found for user: {}", orderId, user.getEmail());
+                    return new OrderNotFoundException("Order not found");
+                });
 
         return convertToOrderResponse(order);
     }
     @Transactional
     public OrderResponse cancelOrder(Long orderId, User user) {
+        log.info("Order cancellation requested for orderId: {}", orderId);
 
         Order order = orderRepository.findByIdAndUser(orderId, user)
                 .orElseThrow(() ->
@@ -130,12 +154,17 @@ public class OrderService {
         if (order.getStatus() != OrderStatus.PENDING &&
                 order.getStatus() != OrderStatus.CONFIRMED) {
 
+            log.warn("Order {} cannot be cancelled. Current status: {}",
+                    orderId,
+                    order.getStatus());
+
             throw new InvalidOrderStatusException(
                     "Order cannot be cancelled in status: "
                             + order.getStatus());
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+        log.info("Order {} cancelled successfully", orderId);
 
         List<OrderItem> orderItems =
                 orderItemRepository.findByOrder(order);
@@ -202,6 +231,9 @@ public class OrderService {
 
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, OrderStatus newStatus){
+        log.info("Order status update requested for orderId: {}, newStatus: {}",
+                orderId,
+                newStatus);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(()->new  OrderNotFoundException("Order not found"));

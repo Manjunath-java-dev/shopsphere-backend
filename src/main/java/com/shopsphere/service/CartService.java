@@ -12,6 +12,8 @@ import com.shopsphere.exception.ProductNotFoundException;
 import com.shopsphere.repositoy.CartItemRepository;
 import com.shopsphere.repositoy.CartRepository;
 import com.shopsphere.repositoy.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.List;
 
 @Service
 public class CartService {
+    private static final Logger log = LoggerFactory.getLogger(CartService.class);
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
@@ -33,6 +36,7 @@ public class CartService {
     }
 
     public CartItem addToCart(User user, Long productId, Integer quantity) {
+        log.info("Adding product {} to cart for user {}", productId, user.getEmail());
 
         // STEP 1: Find or create cart
         Cart cart = cartRepository.findByUser(user)
@@ -49,8 +53,10 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() ->
                         new ProductNotFoundException(
+
                                 "Product not found with id: " + productId
                         ));
+
 
         // STEP 3: Find CartItem
         CartItem cartItem = cartItemRepository
@@ -69,10 +75,14 @@ public class CartService {
         );
 
         // STEP 5: Save CartItem
-        return cartItemRepository.save(cartItem);
+        CartItem savedCartItem = cartItemRepository.save(cartItem);
+        log.info("Product {} added to cart successfully", productId);
+        return savedCartItem;
+
     }
 
     public CartResponse getMyCart(User user) {
+        log.info("Cart fetched successfully for user {}", user.getEmail());
 
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() ->
@@ -111,6 +121,7 @@ public class CartService {
 
     public CartItem updateCartItem(User user, Long cartItemId, Integer quantity) {
 
+
         // 1. Find user's cart
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() ->
@@ -124,15 +135,23 @@ public class CartService {
 
         // 3. Check cart item belongs to logged-in user's cart
         if (!cartItem.getCart().getId().equals(cart.getId())) {
+            log.warn("User {} attempted to update cart item {} that does not belong to their cart",
+                    user.getEmail(), cartItemId);
             throw new CartItemNotFoundException(
                     "Cart item does not belong to this user's cart");
+
         }
 
         // 4. Update quantity
         cartItem.setQuantity(quantity);
 
         // 5. Save
-        return cartItemRepository.save(cartItem);
+        CartItem updatedCartItem = cartItemRepository.save(cartItem);
+
+        log.info("Cart item {} quantity updated to {}",
+                cartItemId, quantity);
+
+        return updatedCartItem;
     }
 
     public void removeCartItem(User user, Long cartItemId) {
@@ -156,5 +175,8 @@ public class CartService {
 
         // 4. Delete
         cartItemRepository.delete(cartItem);
+
+        log.info("Cart item {} removed successfully for user {}",
+                cartItemId, user.getEmail());
     }
 }

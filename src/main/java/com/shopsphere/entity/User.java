@@ -3,7 +3,7 @@ package com.shopsphere.entity;
 import com.shopsphere.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.AnyDiscriminatorImplicitValues;
+
 
 import java.time.LocalDateTime;
 

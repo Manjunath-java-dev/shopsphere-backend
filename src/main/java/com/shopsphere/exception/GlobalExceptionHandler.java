@@ -117,7 +117,7 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .data(null)
                 .build();
-        return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(response,HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(OrderNotFoundException.class)
@@ -150,6 +150,33 @@ public class GlobalExceptionHandler {
                 .data(null)
                 .build();
         return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(WishlistAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleWishlistAlreadyExistsException(
+            WishlistAlreadyExistsException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+
+        return new ResponseEntity<>(response,HttpStatus.CONFLICT);
+
+    }
+
+    @ExceptionHandler(WishlistItemNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>>
+    handleWishlistItemNotFoundException(
+            WishlistItemNotFoundException ex) {
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
 

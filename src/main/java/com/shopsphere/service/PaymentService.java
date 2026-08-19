@@ -12,11 +12,14 @@ import com.shopsphere.exception.OrderNotFoundException;
 import com.shopsphere.exception.PaymentAlreadyExistsException;
 import com.shopsphere.repositoy.OrderRepository;
 import com.shopsphere.repositoy.PaymentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PaymentService {
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     public PaymentService(PaymentRepository paymentRepository, OrderRepository orderRepository){
@@ -27,6 +30,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse makePayment(Long orderId, User user, PaymentMethod paymentMethod){
+        log.info("Payment started for orderId: {}",orderId);
         // STEP 1: Find the order belonging to this customer
        Order order = orderRepository.findByIdAndUser(orderId,user)
                 .orElseThrow(()-> new OrderNotFoundException("Order not found"));
@@ -39,6 +43,7 @@ public class PaymentService {
 
 // STEP 3: Check order status
         if (order.getStatus() != OrderStatus.PENDING) {
+            log.warn("Payment already exists for orderId: {}", orderId);
             throw new InvalidOrderStatusException(
                     "Payment can only be made for a PENDING order");
         }
@@ -51,10 +56,14 @@ public class PaymentService {
 
         // STEP 5: Save payment
         payment = paymentRepository.save(payment);
+        log.info("Payment successful for orderId: {}, amount: {}",
+                orderId, payment.getAmount());
 
         // STEP 6: Change order status
         order.setStatus(OrderStatus.CONFIRMED);
         orderRepository.save(order);
+        log.info("Order {} status changed to CONFIRMED after payment",
+                orderId);
 
 
         PaymentResponse response = new PaymentResponse();
