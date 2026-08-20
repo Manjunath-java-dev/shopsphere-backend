@@ -4,10 +4,7 @@ import com.shopsphere.dto.response.OrderItemResponse;
 import com.shopsphere.dto.response.OrderResponse;
 import com.shopsphere.entity.*;
 import com.shopsphere.enums.OrderStatus;
-import com.shopsphere.exception.CartNotFoundException;
-import com.shopsphere.exception.InsufficientStockException;
-import com.shopsphere.exception.InvalidOrderStatusException;
-import com.shopsphere.exception.OrderNotFoundException;
+import com.shopsphere.exception.*;
 import com.shopsphere.repositoy.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,22 +22,30 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final AddressRepository addressRepository;
 
     public OrderService(CartRepository cartRepository,
                         CartItemRepository cartItemRepository,
                         OrderItemRepository orderItemRepository,
                         OrderRepository orderRepository,
-                        ProductRepository productRepository){
+                        ProductRepository productRepository,
+                        AddressRepository addressRepository){
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.addressRepository = addressRepository;
     }
 
     @Transactional
-    public OrderResponse createOrder(User user){
+    public OrderResponse createOrder(User user,Long addressId){
         log.info("Order creation started for user: {}", user.getEmail());
+        Address address = addressRepository
+                .findByIdAndUser(addressId, user)
+                .orElseThrow(() ->
+                        new AddressNotFoundException(
+                                "Address not found"));
         //find user's cart
       Cart cart =  cartRepository.findByUser(user)
                 .orElseThrow(()->new CartNotFoundException("Cart not found"));
@@ -70,6 +75,12 @@ public class OrderService {
                 .user(user)
                 .totalAmount(0.0)
                 .status(OrderStatus.PENDING)
+                .shippingAddressLine1(address.getAddressLine1())
+                .shippingAddressLine2(address.getAddressLine2())
+                .shippingCity(address.getCity())
+                .shippingState(address.getState())
+                .shippingPincode(address.getPincode())
+                .shippingCountry(address.getCountry())
                 .build();
         order = orderRepository.save(order);
 
@@ -217,6 +228,12 @@ public class OrderService {
         orderResponse.setTotalAmount(order.getTotalAmount());
         orderResponse.setStatus(order.getStatus());
         orderResponse.setItems(orderItemResponses);
+        orderResponse.setShippingAddressLine1(order.getShippingAddressLine1());
+        orderResponse.setShippingAddressLine2(order.getShippingAddressLine2());
+        orderResponse.setShippingCity(order.getShippingCity());
+        orderResponse.setShippingState(order.getShippingState());
+        orderResponse.setShippingPincode(order.getShippingPincode());
+        orderResponse.setShippingCountry(order.getShippingCountry());
 
         return orderResponse;
     }

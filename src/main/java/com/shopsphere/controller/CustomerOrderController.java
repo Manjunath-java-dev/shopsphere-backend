@@ -1,5 +1,6 @@
 package com.shopsphere.controller;
 
+import com.shopsphere.dto.request.CreateOrderRequest;
 import com.shopsphere.dto.response.ApiResponse;
 import com.shopsphere.dto.response.OrderResponse;
 import com.shopsphere.entity.User;
@@ -7,6 +8,7 @@ import com.shopsphere.exception.UserNotFoundException;
 import com.shopsphere.repositoy.UserRepository;
 import com.shopsphere.service.OrderService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +33,7 @@ public class CustomerOrderController {
 
     @PostMapping
     public ApiResponse<OrderResponse> createOrder(
+            @Valid @RequestBody CreateOrderRequest orderRequest,
             Authentication authentication) {
 
         String email = authentication.getName();
@@ -40,7 +43,7 @@ public class CustomerOrderController {
                         new UserNotFoundException("User not found"));
 
         OrderResponse orderResponse =
-                orderService.createOrder(user);
+                orderService.createOrder(user,orderRequest.getAddressId());
 
         return ApiResponse.<OrderResponse>builder()
                 .success(true)

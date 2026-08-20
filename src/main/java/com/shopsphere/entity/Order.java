@@ -29,6 +29,25 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status;
 
+    // Shipping address snapshot
+    @Column(length = 100)
+    private String shippingAddressLine1;
+
+    @Column(length = 100)
+    private String shippingAddressLine2;
+
+    @Column(length = 50)
+    private String shippingCity;
+
+    @Column(length = 50)
+    private String shippingState;
+
+    @Column(length = 10)
+    private String shippingPincode;
+
+    @Column(length = 50)
+    private String shippingCountry;
+
     @Column(nullable = false,updatable = false)
     private LocalDateTime createdAt;
 

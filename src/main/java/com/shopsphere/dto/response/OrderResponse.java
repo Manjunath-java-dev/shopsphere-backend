@@ -13,5 +13,11 @@ public class OrderResponse {
     private Long id;
     private Double totalAmount;
     private OrderStatus status;
+    private String shippingAddressLine1;
+    private String shippingAddressLine2;
+    private String shippingCity;
+    private String shippingState;
+    private String shippingPincode;
+    private String shippingCountry;
     private List<OrderItemResponse> items;
 }

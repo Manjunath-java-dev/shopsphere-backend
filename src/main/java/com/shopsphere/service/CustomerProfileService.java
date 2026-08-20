@@ -4,6 +4,7 @@ import com.shopsphere.dto.request.CustomerUpdateRequest;
 import com.shopsphere.dto.response.CustomerProfileResponse;
 import com.shopsphere.entity.User;
 import com.shopsphere.exception.InvalidCredentialsException;
+import com.shopsphere.exception.PhoneAlreadyExistsException;
 import com.shopsphere.repositoy.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,13 @@ public class CustomerProfileService {
     public CustomerProfileResponse updateMyProfile(
             User user,
             CustomerUpdateRequest request) {
+
+        if (!user.getPhone().equals(request.getPhone())
+                && userRepository.existsByPhone(request.getPhone())) {
+
+            throw new PhoneAlreadyExistsException(
+                    "Phone number already exists");
+        }
 
         user.setName(request.getName());
         user.setPhone(request.getPhone());
