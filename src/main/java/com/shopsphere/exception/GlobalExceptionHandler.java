@@ -190,5 +190,37 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(ReviewAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleReviewAlreadyExistsException(
+            ReviewAlreadyExistsException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.CONFLICT);
+    }
 
+
+    @ExceptionHandler(ProductNotPurchasedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleProductNotPurchasedException(
+            ProductNotPurchasedException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(ReviewNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleReviewNotFoundException(
+            ReviewNotFoundException ex){
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
+    }
 }
