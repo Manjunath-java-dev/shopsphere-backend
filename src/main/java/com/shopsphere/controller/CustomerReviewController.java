@@ -114,4 +114,24 @@ public class CustomerReviewController {
                 .data(null)
                 .build();
     }
+
+    @GetMapping("/my")
+    public ApiResponse<List<ReviewResponse>> getMyReviews(
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new UserNotFoundException("User not found"));
+
+        List<ReviewResponse> responses =
+                reviewService.getMyReviews(user);
+
+        return ApiResponse.<List<ReviewResponse>>builder()
+                .success(true)
+                .message("My reviews fetched successfully")
+                .data(responses)
+                .build();
+    }
 }

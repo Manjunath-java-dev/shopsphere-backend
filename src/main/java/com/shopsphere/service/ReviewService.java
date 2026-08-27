@@ -168,6 +168,25 @@ public class ReviewService {
 
         updateProductRating(product);
     }
+
+    public List<ReviewResponse> getMyReviews(User user) {
+
+        List<Review> reviews =
+                reviewRepository.findByUser(user);
+
+        List<ReviewResponse> responses =
+                new ArrayList<>();
+
+        for (Review review : reviews) {
+
+            responses.add(
+                    convertToResponse(review)
+            );
+
+        }
+
+        return responses;
+    }
 }
 
 

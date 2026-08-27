@@ -40,7 +40,7 @@ public class AddressController {
      return ApiResponse.<AddressResponse>builder()
              .success(true)
              .message("Address added successfulyy")
-             .data(null)
+             .data(addressResponse)
              .build();
     }
 

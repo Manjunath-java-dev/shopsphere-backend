@@ -39,85 +39,116 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse createOrder(User user,Long addressId){
-        log.info("Order creation started for user: {}", user.getEmail());
+    public OrderResponse createOrder(User user, Long addressId) {
+
+        log.info("Pending order creation started for user: {}",
+                user.getEmail());
+
+        // 1. Find shipping address
         Address address = addressRepository
                 .findByIdAndUser(addressId, user)
                 .orElseThrow(() ->
                         new AddressNotFoundException(
                                 "Address not found"));
-        //find user's cart
-      Cart cart =  cartRepository.findByUser(user)
-                .orElseThrow(()->new CartNotFoundException("Cart not found"));
 
-      //get all the items from cart
-       List<CartItem> cartItems =  cartItemRepository.findByCart(cart);
+        // 2. Find user's cart
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new CartNotFoundException(
+                                "Cart not found"));
 
-       //check cart is empty
-        if(cartItems.isEmpty()){
-            log.warn("Order creation failed: cart is empty for user: {}", user.getEmail());
-            throw new CartNotFoundException("Cart is empty");
+        // 3. Get cart items
+        List<CartItem> cartItems =
+                cartItemRepository.findByCart(cart);
+
+        // 4. Check cart empty
+        if (cartItems.isEmpty()) {
+
+            log.warn(
+                    "Order creation failed: cart is empty for user: {}",
+                    user.getEmail());
+
+            throw new CartNotFoundException(
+                    "Cart is empty");
         }
 
-        //check stock
-        for (CartItem cartItem : cartItems){
-          Product product = cartItem.getProduct();
-          if(product.getStock()<cartItem.getQuantity()){
-              log.warn("Insufficient stock for product: {}, requested: {}, available: {}",
-                      product.getName(),
-                      cartItem.getQuantity(),
-                      product.getStock());
-              throw new InsufficientStockException("Not enough stock for product: "+product.getName());
-          }
+        // 5. Check stock
+        for (CartItem cartItem : cartItems) {
+
+            Product product = cartItem.getProduct();
+
+            if (product.getStock() < cartItem.getQuantity()) {
+
+                log.warn(
+                        "Insufficient stock for product: {}, requested: {}, available: {}",
+                        product.getName(),
+                        cartItem.getQuantity(),
+                        product.getStock());
+
+                throw new InsufficientStockException(
+                        "Not enough stock for product: "
+                                + product.getName());
+            }
         }
-        //create order
+
+        // 6. Create PENDING order
         Order order = Order.builder()
                 .user(user)
                 .totalAmount(0.0)
                 .status(OrderStatus.PENDING)
-                .shippingAddressLine1(address.getAddressLine1())
-                .shippingAddressLine2(address.getAddressLine2())
-                .shippingCity(address.getCity())
-                .shippingState(address.getState())
-                .shippingPincode(address.getPincode())
-                .shippingCountry(address.getCountry())
+                .shippingAddressLine1(
+                        address.getAddressLine1())
+                .shippingAddressLine2(
+                        address.getAddressLine2())
+                .shippingCity(
+                        address.getCity())
+                .shippingState(
+                        address.getState())
+                .shippingPincode(
+                        address.getPincode())
+                .shippingCountry(
+                        address.getCountry())
                 .build();
+
         order = orderRepository.save(order);
 
-        // Calculate total + create OrderItems
+        // 7. Calculate total + create OrderItems
         Double totalAmount = 0.0;
-        for (CartItem cartItem : cartItems){
-         Product product = cartItem.getProduct();
-        Double itemTotal = product.getPrice()*cartItem.getQuantity();
-        totalAmount = totalAmount + itemTotal;
-         OrderItem orderItem = OrderItem.builder()
-                 .order(order)
-                 .product(product)
-                 .quantity(cartItem.getQuantity())
-                 .price(product.getPrice())
-                 .build();
-         orderItemRepository.save(orderItem);
 
-            // Reduce stock
-            product.setStock(
-                    product.getStock() - cartItem.getQuantity());
-            productRepository.save(product);
+        for (CartItem cartItem : cartItems) {
+
+            Product product = cartItem.getProduct();
+
+            Double itemTotal =
+                    product.getPrice()
+                            * cartItem.getQuantity();
+
+            totalAmount += itemTotal;
+
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .product(product)
+                    .quantity(cartItem.getQuantity())
+                    .price(product.getPrice())
+                    .build();
+
+            orderItemRepository.save(orderItem);
         }
 
+        // 8. Set total
         order.setTotalAmount(totalAmount);
+
         orderRepository.save(order);
-        log.info("Order created with id: {} for user: {}",
+
+        log.info(
+                "Pending order created with id: {} for user: {}",
                 order.getId(),
                 user.getEmail());
 
-// Clear cart
-        cartItemRepository.deleteByCart(cart);
+        // IMPORTANT:
+        // Do NOT reduce stock here.
+        // Do NOT clear cart here.
 
-        log.info("Order {} created successfully. Total amount: {}",
-                order.getId(),
-                order.getTotalAmount());
-
-// Convert Order → OrderResponse
         return convertToOrderResponse(order);
     }
 
@@ -156,41 +187,46 @@ public class OrderService {
     }
     @Transactional
     public OrderResponse cancelOrder(Long orderId, User user) {
+
         log.info("Order cancellation requested for orderId: {}", orderId);
 
         Order order = orderRepository.findByIdAndUser(orderId, user)
                 .orElseThrow(() ->
                         new OrderNotFoundException("Order not found"));
 
-        if (order.getStatus() != OrderStatus.PENDING &&
-                order.getStatus() != OrderStatus.CONFIRMED) {
+        OrderStatus currentStatus = order.getStatus();
 
-            log.warn("Order {} cannot be cancelled. Current status: {}",
-                    orderId,
-                    order.getStatus());
+        if (currentStatus != OrderStatus.PENDING &&
+                currentStatus != OrderStatus.CONFIRMED) {
 
             throw new InvalidOrderStatusException(
                     "Order cannot be cancelled in status: "
-                            + order.getStatus());
+                            + currentStatus);
         }
 
         order.setStatus(OrderStatus.CANCELLED);
-        log.info("Order {} cancelled successfully", orderId);
 
-        List<OrderItem> orderItems =
-                orderItemRepository.findByOrder(order);
+        // Restore stock ONLY if payment was already successful
+        if (currentStatus == OrderStatus.CONFIRMED) {
 
-        for (OrderItem orderItem : orderItems) {
+            List<OrderItem> orderItems =
+                    orderItemRepository.findByOrder(order);
 
-            Product product = orderItem.getProduct();
+            for (OrderItem orderItem : orderItems) {
 
-            product.setStock(
-                    product.getStock() + orderItem.getQuantity());
+                Product product = orderItem.getProduct();
 
-            productRepository.save(product);
+                product.setStock(
+                        product.getStock()
+                                + orderItem.getQuantity());
+
+                productRepository.save(product);
+            }
         }
 
         orderRepository.save(order);
+
+        log.info("Order {} cancelled successfully", orderId);
 
         return convertToOrderResponse(order);
     }

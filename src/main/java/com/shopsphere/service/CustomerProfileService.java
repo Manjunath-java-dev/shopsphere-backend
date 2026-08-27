@@ -24,11 +24,11 @@ public class CustomerProfileService {
         CustomerProfileResponse response =
                 new CustomerProfileResponse();
 
-        response.setId(user.getId());
+
         response.setName(user.getName());
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
-        response.setRole(user.getRole());
+
         response.setCreatedAt(user.getCreatedAt());
         response.setUpdatedAt(user.getUpdatedAt());
 
@@ -54,11 +54,10 @@ public class CustomerProfileService {
         CustomerProfileResponse response =
                 new CustomerProfileResponse();
 
-        response.setId(updatedUser.getId());
         response.setName(updatedUser.getName());
         response.setEmail(updatedUser.getEmail());
         response.setPhone(updatedUser.getPhone());
-        response.setRole(updatedUser.getRole());
+
         response.setCreatedAt(updatedUser.getCreatedAt());
         response.setUpdatedAt(updatedUser.getUpdatedAt());
 
